@@ -27,15 +27,22 @@ async def callback(update, context):
         await update_user_settings(uid, {"scale_in_filename": not s["scale_in_filename"]})
     elif action == "reset":
         await reset_user_settings(uid)
-    elif action in ("prefix","suffix","quality"):
+    elif action in ("prefix", "suffix", "quality"):
         context.user_data["user_setting_wait"] = action
         await q.message.reply_text({
-            "prefix":"Send prefix.",
-            "suffix":"Send suffix.",
-            "quality":"Send JPG quality 1–100."
+            "prefix": "Send prefix.",
+            "suffix": "Send suffix.",
+            "quality": "Send JPG quality 1–100.",
         }[action])
         return
-    await q.edit_message_reply_markup(reply_markup=us())
+    s = await get_user_settings(uid)
+    await q.edit_message_text(
+        f"<b>User Settings</b>\n\nFormat: {s['format']}\nJPG quality: {s['jpeg_quality']}\n"
+        f"Prefix: {s['prefix'] or 'None'}\nSuffix: {s['suffix'] or 'None'}\n"
+        f"Scale filename: {'ON' if s['scale_in_filename'] else 'OFF'}\n"
+        f"Thumbnail: {'ON' if s['thumbnail'] else 'OFF'}",
+        parse_mode="HTML", reply_markup=us()
+    )
 
 async def text(update, context):
     action = context.user_data.get("user_setting_wait")
@@ -45,8 +52,9 @@ async def text(update, context):
     try:
         if action == "quality":
             value = int(value)
-            if not 1 <= value <= 100: raise ValueError
-        elif len(value) > 80:
+            if not 1 <= value <= 100:
+                raise ValueError
+        elif len(value) > 40:
             raise ValueError
         await update_user_settings(update.effective_user.id, {action: value})
     except Exception:
