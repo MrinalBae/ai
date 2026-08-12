@@ -1,22 +1,29 @@
-FINAL BUILD VERIFICATION
-=========================
-Python syntax compilation: PASS
-FastAPI route definitions: PASS (static)
-Telegram command registrations: PASS
-Telegram callback routing: PASS (static)
-User settings callbacks: PASS (static)
-Admin settings callbacks: PASS (static)
-Privacy/encryption logic: PASS (static)
-Multiple API key storage/rotation logic: PASS (static)
-Expand ratio buttons: PASS (static)
-Custom WIDTH x HEIGHT parser: PASS (static)
-Expand side selection: PASS (static)
-2x/4x controls: PASS (static)
-MongoDB persistence/TTL definitions: PASS (static)
-Temporary media endpoint: PASS (static)
-Webhook secret check: PASS (static)
-Render start command: PASS
-Node/Vite/npm/pnpm artifacts: ABSENT
-External credential-dependent E2E: NOT RUN
-Pixelcut live-credit test: NOT RUN
-Telegram live webhook test: NOT RUN
+Image AI Telegram Bot V7
+
+This package contains the complete V6 source plus this verification manifest.
+Python cache artifacts (__pycache__/ and *.pyc) are intentionally excluded.
+
+PACKAGED FILES:
+.gitignore
+README.md
+app/__init__.py
+app/config.py
+app/database.py
+app/handlers/__init__.py
+app/handlers/admin.py
+app/handlers/image.py
+app/handlers/settings.py
+app/handlers/start.py
+app/image_utils.py
+app/keyboards.py
+app/main.py
+app/security.py
+app/services/__init__.py
+app/services/expand.py
+app/services/pixelcut.py
+app/services/remove_bg.py
+app/services/upscale.py
+app/telegram.py
+app/temp_storage.py
+render.yaml
+requirements.txt
