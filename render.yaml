@@ -5,35 +5,19 @@ services:
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /api/healthz
+    healthCheckPath: /healthz
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.8
       - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DATABASE
+        value: image_ai_bot
+      - key: ADMIN_IDS
+        sync: false
+      - key: SETTINGS_ENCRYPTION_KEY
         sync: false
       - key: PUBLIC_BASE_URL
         sync: false
       - key: WEBHOOK_SECRET
-        sync: false
-      - key: WEBHOOK_SETUP_TOKEN
-        sync: false
-      - key: PIXELCUT_API_KEY_1
-        sync: false
-      - key: PIXELCUT_API_KEY_2
-        sync: false
-      - key: PIXELCUT_API_KEY_3
-        sync: false
-      - key: PIXELCUT_API_KEY_4
-        sync: false
-      - key: PIXELCUT_API_KEY_5
-        sync: false
-      - key: PIXELCUT_API_KEY_6
-        sync: false
-      - key: PIXELCUT_API_KEY_7
-        sync: false
-      - key: PIXELCUT_API_KEY_8
-        sync: false
-      - key: PIXELCUT_API_KEY_9
-        sync: false
-      - key: PIXELCUT_API_KEY_10
         sync: false
