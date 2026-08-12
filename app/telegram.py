@@ -8,17 +8,17 @@ from app.handlers.image import receive, callback as image_callback, text as imag
 def build_application():
     if not settings.telegram_bot_token:
         raise RuntimeError("TELEGRAM_BOT_TOKEN is not configured.")
-    app=Application.builder().token(settings.telegram_bot_token).build()
-    app.add_handler(CommandHandler("start",start))
-    app.add_handler(CommandHandler("us",user_settings))
-    app.add_handler(CommandHandler("bs",admin_settings))
-    app.add_handler(CallbackQueryHandler(user_settings_callback,pattern=r"^us:"))
-    app.add_handler(CallbackQueryHandler(admin_callback,pattern=r"^(bs:|api:|privacy:)"))
-    app.add_handler(CallbackQueryHandler(image_callback,pattern=r"^(op:|upscale:|remove:|ratio:|side:|expandscale:|cancel$)"))
-    # Conversation text handlers are separate; group order prevents admin/user settings from
-    # stealing expand custom input.
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, image_text),group=0)
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, user_settings_text),group=1)
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_text),group=2)
-    app.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, receive),group=3)
+    app = Application.builder().token(settings.telegram_bot_token).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("us", user_settings))
+    app.add_handler(CommandHandler("bs", admin_settings))
+    app.add_handler(CallbackQueryHandler(user_settings_callback, pattern=r"^us:"))
+    app.add_handler(CallbackQueryHandler(admin_callback, pattern=r"^(bs:|api:|privacy:)"))
+    app.add_handler(CallbackQueryHandler(image_callback, pattern=r"^(op:|upscale:|remove:|ratio:|side:|expandscale:|cancel$)"))
+
+    # Text handlers are in priority order. Each returns True when it consumes the message.
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, image_text), group=0)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, user_settings_text), group=1)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_text), group=2)
+    app.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, receive), group=3)
     return app

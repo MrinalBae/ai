@@ -7,13 +7,16 @@ def operations():
         [InlineKeyboardButton("🖼️ EXPAND", callback_data="op:expand")],
     ])
 
-def scales(prefix):
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Original", callback_data=f"{prefix}:1"),
-         InlineKeyboardButton("2×", callback_data=f"{prefix}:2"),
-         InlineKeyboardButton("4×", callback_data=f"{prefix}:4")],
-        [InlineKeyboardButton("✖ Cancel", callback_data="cancel")],
+def scales(prefix, include_original=False):
+    rows = []
+    if include_original:
+        rows.append([InlineKeyboardButton("Original", callback_data=f"{prefix}:1")])
+    rows.append([
+        InlineKeyboardButton("2×", callback_data=f"{prefix}:2"),
+        InlineKeyboardButton("4×", callback_data=f"{prefix}:4"),
     ])
+    rows.append([InlineKeyboardButton("✖ Cancel", callback_data="cancel")])
+    return InlineKeyboardMarkup(rows)
 
 def ratios():
     return InlineKeyboardMarkup([
@@ -23,8 +26,8 @@ def ratios():
         [InlineKeyboardButton("9:16", callback_data="ratio:9:16"),
          InlineKeyboardButton("16:9", callback_data="ratio:16:9"),
          InlineKeyboardButton("2.39:1", callback_data="ratio:2.39:1")],
-        [InlineKeyboardButton("A4 Portrait", callback_data="ratio:a4"),
-         InlineKeyboardButton("US Letter", callback_data="ratio:letter")],
+        [InlineKeyboardButton("A4", callback_data="ratio:a4"),
+         InlineKeyboardButton("Letter", callback_data="ratio:letter")],
         [InlineKeyboardButton("Custom", callback_data="ratio:custom"),
          InlineKeyboardButton("✖ Cancel", callback_data="cancel")],
     ])
@@ -36,6 +39,7 @@ def sides():
         [InlineKeyboardButton("⬅ LEFT", callback_data="side:left"),
          InlineKeyboardButton("➡ RIGHT", callback_data="side:right")],
         [InlineKeyboardButton("⬆⬇⬅➡ ALL SIDES", callback_data="side:all")],
+        [InlineKeyboardButton("✖ Cancel", callback_data="cancel")],
     ])
 
 def us():
@@ -67,30 +71,28 @@ def api_menu():
 
 def privacy(enc, show):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(f"Encryption: {'ON 🔒' if enc else 'OFF 🔓'}", callback_data="privacy:enc")],
+        [InlineKeyboardButton(f"Encryption display: {'ON 🔒' if enc else 'OFF 🔓'}", callback_data="privacy:enc")],
         [InlineKeyboardButton(f"Show API keys: {'ON 👁️' if show else 'OFF 🙈'}", callback_data="privacy:show")],
         [InlineKeyboardButton("⬅ Back", callback_data="bs:back")],
     ])
 
-def processing():
+def processing(timeout, max_upload):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⏱ Timeout", callback_data="bs:timeout"),
-         InlineKeyboardButton("📦 Max upload", callback_data="bs:maxupload")],
+        [InlineKeyboardButton(f"⏱ Timeout: {timeout}s", callback_data="bs:timeout"),
+         InlineKeyboardButton(f"📦 Max upload: {max_upload}MB", callback_data="bs:maxupload")],
         [InlineKeyboardButton("⬅ Back", callback_data="bs:back")],
     ])
 
-def output():
+def output(quality, thumbnail):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📄 Format", callback_data="bs:format"),
-         InlineKeyboardButton("🎚 JPG quality", callback_data="bs:quality")],
-        [InlineKeyboardButton("🖼 Thumbnail", callback_data="bs:thumbnail"),
-         InlineKeyboardButton("⬅ Back", callback_data="bs:back")],
+        [InlineKeyboardButton(f"🎚 JPG quality: {quality}", callback_data="bs:quality")],
+        [InlineKeyboardButton(f"🖼 Global thumbnail: {'ON' if thumbnail else 'OFF'}", callback_data="bs:thumbnail")],
+        [InlineKeyboardButton("⬅ Back", callback_data="bs:back")],
     ])
 
 def rotation(enabled):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(f"API rotation: {'ON 🔄' if enabled else 'OFF ⏸'}",
-                              callback_data="bs:rotation_toggle")],
+        [InlineKeyboardButton(f"API rotation: {'ON 🔄' if enabled else 'OFF ⏸'}", callback_data="bs:rotation_toggle")],
         [InlineKeyboardButton("⬅ Back", callback_data="bs:back")],
     ])
 
@@ -98,10 +100,11 @@ def api_list(items):
     rows = []
     for oid, label, enabled in items:
         rows.append([
-            InlineKeyboardButton(("🟢 " if enabled else "🔴 ") + label,
-                                 callback_data=f"api:toggle:{oid}"),
+            InlineKeyboardButton(("🟢 " if enabled else "🔴 ") + label[:30], callback_data=f"api:toggle:{oid}"),
             InlineKeyboardButton("🗑", callback_data=f"api:delete:{oid}"),
         ])
-    rows += [[InlineKeyboardButton("➕ Add API", callback_data="api:add")],
-             [InlineKeyboardButton("⬅ Back", callback_data="bs:apis")]]
+    rows += [
+        [InlineKeyboardButton("➕ Add API", callback_data="api:add")],
+        [InlineKeyboardButton("⬅ Back", callback_data="bs:apis")],
+    ]
     return InlineKeyboardMarkup(rows)
