@@ -5,7 +5,7 @@ services:
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /healthz
+    healthCheckPath: /api/healthz
     envVars:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
@@ -21,3 +21,7 @@ services:
         sync: false
       - key: WEBHOOK_SECRET
         sync: false
+      - key: UPTIME_URL
+        sync: false
+      - key: UPTIME_INTERVAL
+        value: "300"

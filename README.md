@@ -1,379 +1,294 @@
 # 🤖 Image AI Telegram Bot
 
-A professional Telegram image-processing bot powered by the official Pixelcut API.
+Professional Telegram image processing bot powered by the official Pixelcut API.
 
-The bot provides **Background Removal, Image Upscaling and AI Image Expansion** through a clean, mobile-friendly Telegram interface.
-
-Built with Python, FastAPI, python-telegram-bot and MongoDB persistence.
-
----
-
-## ✨ Features
+## Features
 
 - 🪄 Remove Background
-- 🔍 Upscale images to 2× or 4×
-- 🖼️ AI Image Expand
-- 📱 Professional mobile-friendly Telegram UI
-- 🗂️ JPG / JPEG / PNG support
-- 📁 Results returned as downloadable image documents
-- 🔑 Multiple Pixelcut API keys
-- 🔄 API rotation / failover
-- 🗄️ MongoDB persistent settings
-- 🔐 API-key encryption and privacy controls
-- 👤 User settings via `/us`
-- 🛠️ Admin settings via `/bs`
-- 🏷️ Custom result filename prefix/suffix
-- 🖼️ Optional result thumbnails
+- 🔍 Upscale: 2× / 4×
+- 🖼️ Expand with ratio presets and custom dimensions
+- `1:1`, `4:3`, `4:5`, `9:16`, `16:9`, `2.39:1`, A4, Letter, Custom
+- Custom `width × height` in pixels
+- Expand side selection
+- JPG / JPEG / PNG input
+- JPG / PNG result documents
+- User settings with `/us`
+- Admin settings with `/bs`
+- Multiple Pixelcut API keys with no fixed 10-key limit
+- API enable/disable/delete
+- API rotation and failover
+- API-key encryption at rest
+- Privacy control for API-key display
+- Filename prefix/suffix
+- Optional 2×/4× filename suffix
+- Optional result thumbnail
+- MongoDB persistence for settings
+- Temporary image files are kept on the application instance only and automatically expire
 
----
+## Telegram Flow
 
-## ⚙️ Bot Commands
+```text
+/start
+   ↓
+Send your image/document
+   ↓
+REMOVE BG | UPSCALE
+EXPAND
+```
 
 ### `/start`
 
-Starts the bot and asks:
-
-> Send your image/document
-
-After an image is uploaded:
-
-```text
-┌────────────┬────────────┬────────────┐
-│ REMOVE BG  │   UPSCALE  │   EXPAND   │
-└────────────┴────────────┴────────────┘
-```
-
-Settings are intentionally not shown in `/start`.
+Asks the user to send an image/document. Settings are not shown here.
 
 ### `/us`
 
-Opens user settings.
-
-Users can manage available personal options such as:
+User settings:
 
 - Output format
+- JPG quality
 - Filename prefix
 - Filename suffix
-- Thumbnail preference
-- Result naming
-- Other personal processing preferences
-
-User settings are stored in MongoDB.
+- Include 2×/4× in filename
+- Thumbnail
+- Reset
 
 ### `/bs`
 
-Admin-only bot settings.
+Admin-only settings:
 
-The admin panel can manage:
+- Pixelcut API management
+- Privacy / API-key visibility
+- Processing timeout
+- Maximum Telegram upload size
+- JPG quality
+- Global thumbnail switch
+- API rotation
 
-- Pixelcut APIs
-- Add / enable / disable / delete API
-- API priority and rotation
-- Privacy
-- API-key visibility
-- Encryption
-- Filename settings
-- Thumbnail settings
-- Processing configuration
-- Other configurable bot options
+## Pixelcut API
 
----
+The integration uses the current official Pixelcut API format:
 
-# 🔍 Upscale
+- Base URL: `https://api.developer.pixelcut.ai`
+- Authentication: `X-API-Key`
+- JSON request bodies
+- Upscale: `POST /v1/upscale`
+- Remove Background: `POST /v1/remove-background`
+- Outpaint: `POST /v1/outpaint`
 
-The bot supports:
+Pixelcut's current documentation confirms:
 
-- **2×**
-- **4×**
+- Upscale accepts scale `2` or `4`.
+- Upscale input limits include 25 MB, with endpoint resolution limits.
+- Remove Background accepts JPEG/PNG and returns PNG when requested.
+- Outpaint accepts `left`, `top`, `right`, and `bottom` values from 0–2000 pixels per side.
+- Successful API responses provide a `result_url`.
 
-Workflow:
+References:
+- https://www.pixelcut.ai/docs/api-reference
+- https://www.pixelcut.ai/docs/api-reference/upscale
+- https://www.pixelcut.ai/docs/api-reference/outpaint
+- https://www.pixelcut.ai/api/background-remover
 
-```text
-Send Image
-    ↓
-UPSCALE
-    ↓
-2× or 4×
-    ↓
-Pixelcut API
-    ↓
-JPG/PNG Result
-```
+The bot performs Remove Background first and then, when requested, performs the selected 2×/4× upscale as a second Pixelcut operation. The same applies to Expand → 2×/4×.
 
----
+## Multiple API Keys
 
-# 🪄 Remove Background
+There is no hard-coded limit of 10 API keys.
 
-Workflow:
-
-```text
-Send Image
-    ↓
-REMOVE BG
-    ↓
-Pixelcut Background Removal
-    ↓
-2× or 4×
-    ↓
-JPG/PNG Result
-```
-
----
-
-# 🖼️ AI Expand
-
-### Preset ratios
-
-- **1:1**
-- **4:3**
-- **4:5**
-- **9:16**
-- **16:9**
-- **2.39:1**
-- **A4**
-- **Letter**
-- **Custom**
-
-### Custom dimensions
-
-Select:
+Add keys from:
 
 ```text
-Custom
-   ↓
-Width
-   ↓
-Height
+/bs
+  → Pixelcut APIs
+  → Add API
 ```
 
-Example:
+Each key can be enabled, disabled, or deleted.
 
-```text
-1920 × 1080
-```
+When several keys are enabled, the bot selects keys in database order and can fail over to another key after retryable authentication, rate-limit, timeout, or service failures.
 
-### Expand direction
+## Security
 
-The bot allows the required expansion side to be selected before processing.
+API keys are never hardcoded.
 
-Depending on the configured Pixelcut capabilities:
+They are encrypted before being stored in MongoDB using `SETTINGS_ENCRYPTION_KEY`.
 
-- Top
-- Bottom
-- Left
-- Right
-- Horizontal
-- Vertical
-- All sides
+When encryption display is ON, the admin panel shows masked keys.
 
-After expansion, the bot asks for:
+To display the full key in `/bs`, encryption display must be turned OFF and API-key visibility must be ON.
 
-- **2×**
-- **4×**
+The application never sends API keys to ordinary users or to the browser.
 
----
+> A key typed into a Telegram chat can still exist in Telegram's own message history. The bot attempts to minimize exposure by not echoing the key back.
 
-# 🔑 Multiple Pixelcut API Keys
+## MongoDB
 
-There is **no fixed 10-key limit**.
-
-The administrator can add as many API keys as required by the application.
-
-Example:
-
-```text
-Pixelcut APIs
-
-API 1   ✅ Enabled
-API 2   ✅ Enabled
-API 3   ✅ Enabled
-API 4   ❌ Disabled
-API 5   ✅ Enabled
-...
-```
-
-Each API can be:
-
-- Added
-- Enabled
-- Disabled
-- Deleted
-- Prioritized
-- Used for rotation/failover
-
-If one enabled API fails because of authentication, rate limiting or service failure, another available API can be attempted according to the configured rotation strategy.
-
----
-
-# 🔐 Privacy & Encryption
-
-Pixelcut API keys are sensitive credentials.
-
-They must never be:
-
-- Hardcoded in source code
-- Exposed to normal users
-- Sent to Telegram users
-- Written to logs
-- Committed to GitHub
-
-The admin settings include privacy and encryption controls.
-
-When encryption is enabled, API keys are not displayed in plain text in the Telegram admin interface.
-
----
-
-# 🗄️ MongoDB Persistence
-
-MongoDB provides persistent storage for configuration and user settings.
-
-Settings survive:
-
-- Bot restart
-- Render restart
-- Process restart
-- Redeployment
-
-Stored information can include:
+MongoDB stores persistent settings:
 
 - User settings
 - Admin settings
 - Pixelcut API configurations
 - API status
-- API priority
 - Privacy settings
 - Encryption settings
-- Filename settings
-- Thumbnail settings
-- Processing preferences
+- Processing settings
+- Output settings
 
----
+Settings survive application restarts and Render redeployments as long as the same MongoDB database is used.
 
-# 🖼️ Result Files
+Uploaded image bytes are **not stored in MongoDB** because MongoDB documents have a 16 MB document limit. Temporary images are stored in the instance's temporary filesystem only and expire automatically.
 
-Results are returned as downloadable:
+## Upload Limit
 
-- JPG
-- PNG
+Pixelcut supports images up to 25 MB, but the standard Telegram Bot API cloud file-download limit is 20 MB.
 
-### Filename customization
+Therefore this Telegram bot safely caps downloads at **20 MB**.
+
+## Expand
+
+Preset ratios are calculated as an expand-only target canvas.
 
 Example:
 
 ```text
-Prefix: upscaled_
-Original: photo.jpg
-Suffix: _4x
+Custom
+  ↓
+1920 × 1080
+  ↓
+TOP / BOTTOM / LEFT / RIGHT / ALL
+  ↓
+2× / 4×
 ```
 
-Result:
+Pixelcut permits a maximum of 2000 pixels per expansion direction. The bot validates this before sending the request.
+
+If a selected one-sided direction cannot achieve the requested target ratio without changing the opposite dimension, the bot asks the user to choose a compatible side.
+
+## Result Files
+
+User settings can control:
 
 ```text
-upscaled_photo_4x.jpg
+Prefix
+Original filename
+2× / 4× marker
+Suffix
+Extension
 ```
 
-The upscale level can optionally be included automatically:
+Example:
 
 ```text
-photo_2x.jpg
-photo_4x.jpg
+upscaled_photo_4x_final.jpg
 ```
 
-Result thumbnails can also be enabled/disabled through settings.
+The result can also include a Telegram thumbnail when enabled.
 
----
+## FastAPI Service
 
-# 🧩 Architecture
-
-```text
-Telegram User
-      │
-      ▼
-Telegram Bot API
-      │
-      ▼
-Python Application
-      │
- ┌────┴─────────────┐
- │                  │
- ▼                  ▼
-MongoDB          Pixelcut API
- │                  │
- ▼          ┌───────┼────────┐
-Settings    ▼       ▼        ▼
-         Upscale  Remove BG  Expand
-```
-
----
-
-# 🌐 FastAPI Web Service
-
-The application includes a lightweight FastAPI service.
-
-Available endpoints:
+Endpoints:
 
 ```text
 GET /
 GET /api/healthz
 GET /api/docs
 GET /api/openapi.json
+POST /telegram/webhook
+GET /media/{temporary_file_id}
 ```
 
-Temporary processed-media delivery may also be provided when required by the Telegram workflow.
+The FastAPI documentation and OpenAPI specification are generated automatically.
 
----
+## Deployment
 
-# 🚀 Deployment
+This is a Python web service.
 
-Production server:
+### Render build command
+
+```bash
+pip install -r requirements.txt
+```
+
+### Render start command
 
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-The service listens on:
-
-```text
-0.0.0.0
-```
-
-and uses the platform-provided `PORT` environment variable.
-
----
-
-# ☁️ Render
-
-The project is designed to run as a Render Web Service.
-
-Start command:
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port $PORT
-```
+The application listens on `0.0.0.0` and uses the platform-provided `PORT`.
 
 No frontend build is required.
 
----
+## Environment Variables
 
-# 🛠️ Technology Stack
+Required:
 
-- Python
-- FastAPI
-- Uvicorn
-- python-telegram-bot
-- MongoDB
-- Motor / async MongoDB driver
-- Jinja2
-- HTML
-- CSS
-- Vanilla JavaScript
-- Official Pixelcut API
+```text
+TELEGRAM_BOT_TOKEN
+MONGODB_URI
+ADMIN_IDS
+SETTINGS_ENCRYPTION_KEY
+PUBLIC_BASE_URL
+WEBHOOK_SECRET
+```
 
----
+Optional:
 
-# 🚫 No Frontend Build System
+```text
+MONGODB_DATABASE
+PIXELCUT_TIMEOUT
+MAX_UPLOAD_MB
+UPTIME_URL
+UPTIME_INTERVAL
+```
 
-This project does **not** use:
+`MAX_UPLOAD_MB` is capped at 20 for Telegram cloud downloads.
+
+### `UPTIME_URL`
+
+Optional application self-ping feature.
+
+If an external uptime-monitor URL is configured, the service periodically requests that URL while the process is running.
+
+This can help with monitoring, but an application cannot wake itself after a platform has completely suspended it. A true anti-sleep setup therefore requires a supported external uptime/cron monitor or a paid/non-sleeping service plan.
+
+## Project Structure
+
+```text
+app/
+├── __init__.py
+├── main.py
+├── config.py
+├── database.py
+├── security.py
+├── temp_storage.py
+├── image_utils.py
+├── keyboards.py
+├── telegram.py
+│
+├── handlers/
+│   ├── __init__.py
+│   ├── start.py
+│   ├── image.py
+│   ├── settings.py
+│   └── admin.py
+│
+└── services/
+    ├── __init__.py
+    ├── pixelcut.py
+    ├── upscale.py
+    ├── remove_bg.py
+    └── expand.py
+
+requirements.txt
+render.yaml
+.gitignore
+README.md
+```
+
+## No Frontend Stack
+
+This project does not use:
 
 - React
 - Vite
@@ -382,169 +297,44 @@ This project does **not** use:
 - pnpm
 - TypeScript frontend
 - Webpack
-- Separate frontend deployment
-- Frontend build commands
+- frontend build tools
+- `package.json`
+- `node_modules`
+- `vite build`
+- `npm run build`
+- `pnpm build`
 
-There is no:
+## Testing
 
-```text
-npm install
-npm run build
-pnpm build
-vite build
-```
+Before deployment, verify:
 
-requirement.
-
----
-
-# 📂 Project Structure
-
-The project uses a modular Python architecture.
-
-Example:
-
-```text
-app/
-├── main.py
-├── config.py
-├── database.py
-├── pixelcut.py
-├── telegram.py
-├── keyboards.py
-├── start.py
-│
-├── handlers/
-│   ├── image.py
-│   ├── upscale.py
-│   ├── remove_bg.py
-│   ├── expand.py
-│   ├── user_settings.py
-│   └── admin.py
-│
-├── templates/
-│   └── index.html
-│
-└── static/
-    ├── style.css
-    └── app.js
-```
-
-The exact structure may evolve as features are added.
-
----
-
-# 🔑 Environment Variables
-
-Sensitive credentials must be provided through the deployment platform's secret/environment-variable system.
-
-Typical configuration:
-
-```text
-TELEGRAM_BOT_TOKEN
-MONGODB_URI
-PIXELCUT_API_KEY
-ADMIN_ID
-PORT
-```
-
-Additional variables may be required by the deployment configuration.
-
-**Never commit real credentials to GitHub.**
-
----
-
-# 🧪 Testing
-
-Before production deployment, verify:
-
-### FastAPI
-
-```text
-GET /
-GET /api/healthz
-GET /api/docs
-GET /api/openapi.json
-```
-
-### Telegram
-
-```text
-/start
-/us
-/bs
-```
-
-### Image Processing
-
-- JPG
-- JPEG
-- PNG
-- Remove Background
-- 2× Upscale
-- 4× Upscale
-- Expand
+- `/` returns HTTP 200
+- `/api/healthz` returns HTTP 200
+- `/api/docs` returns HTTP 200
+- `/api/openapi.json` returns HTTP 200
+- Telegram webhook accepts valid Telegram updates
+- Invalid webhook secret is rejected
+- `/start`, `/us`, `/bs`
+- JPG/PNG uploads
+- Invalid file rejection
+- 20 MB upload limit
+- 2× / 4× upscale
+- Remove Background → 2×/4×
+- Expand → 2×/4×
 - Preset ratios
 - 2.39:1
 - Custom dimensions
-- Expand direction
-- Result download
-
-### Settings
-
-- User settings persistence
-- Admin settings persistence
-- API add
-- API enable
-- API disable
-- API delete
-- Multiple API rotation
-- Encryption
-- Privacy
-- Filename prefix
-- Filename suffix
+- Expand side validation
+- Multiple API key rotation/failover
+- MongoDB persistence
+- Encryption/privacy settings
+- Filename settings
 - Thumbnail settings
 
----
+## Important
 
-# ⚠️ Pixelcut API Usage
+Real Pixelcut processing requires a valid Pixelcut API key with available API credits.
 
-Image processing depends on the availability and limits of the configured Pixelcut API account(s).
+Real Telegram and MongoDB end-to-end testing requires the corresponding production credentials and network access.
 
-Usage may be subject to:
-
-- Account limits
-- Rate limits
-- API availability
-- Pricing
-- Service restrictions
-
-The bot does not guarantee unlimited Pixelcut processing.
-
----
-
-# 🛡️ Privacy
-
-Users should avoid uploading confidential or sensitive images unless they understand the processing and retention policies of the services involved.
-
-The application is designed to minimize permanent image storage. Uploaded images necessarily pass through the configured image-processing service when processing is requested.
-
----
-
-# 📄 License
-
-This project is intended for personal or authorized use.
-
-Review and replace this section with the appropriate license before distributing the project publicly.
-
----
-
-## ⭐ Project
-
-**Image AI Telegram Bot**
-
-Professional Telegram image processing with:
-
-**Remove Background • Upscale • Expand**
-
-Powered by Python, MongoDB and the official Pixelcut API.
+Do not commit credentials to GitHub.
